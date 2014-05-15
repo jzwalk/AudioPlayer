@@ -215,7 +215,7 @@ class AudioPlayer_Plugin implements Typecho_Plugin_Interface
 				$pattern = "/<a ([^=]+=['\"][^\"']*['\"] )*href=['\"](([^\"']+\.mp3))['\"]( [^=]+=['\"][^\"']*['\"])*>([^<]+)<\/a>/is";
 				$content = preg_replace_callback($pattern,array('AudioPlayer_Plugin',"parseCallback"),$content);
 			}
-			$content = preg_replace_callback("/\[(mp3)](([^]]+))\[\/\\1]/is",array('AudioPlayer_Plugin',"parseCallback"),$content);
+			$content = preg_replace_callback("/\[(mp3)](([^]]+))\[\/\\1]/si",array('AudioPlayer_Plugin',"parseCallback"),$content);
 		}
 
 		return $content;
