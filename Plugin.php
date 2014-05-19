@@ -55,7 +55,7 @@ class AudioPlayer_Plugin implements Typecho_Plugin_Interface
 
 	<link href="<?php $options->pluginUrl('AudioPlayer/assets/audio-player-admin.css');?>" rel="stylesheet" type="text/css" />
 	<link href="<?php $options->pluginUrl('AudioPlayer/assets/cpicker/colorpicker.css');?>" rel="stylesheet" type="text/css" />
-	<script type="text/javascript" src="<?php $options->pluginUrl('AudioPlayer/assets/lib/jquery.js');?>"></script>
+	<script type="text/javascript" src="<?php $options->adminUrl('js/jquery.js');?>"></script>
 	<script type="text/javascript" src="<?php $options->pluginUrl('AudioPlayer/assets/cpicker/colorpicker.js');?>"></script>
 	<script type="text/javascript" src="<?php $options->pluginUrl('AudioPlayer/assets/audio-player-admin.js');?>"></script>
 	<script type="text/javascript" src="<?php $options->pluginUrl('AudioPlayer/assets/audio-player.js');?>"></script>

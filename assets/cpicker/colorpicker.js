@@ -244,7 +244,7 @@
 				if (parentEl == el) {
 					return true;
 				}
-				if (parentEl.contains && !$.browser.safari) {
+				if (parentEl.contains && !(/Safari/.test(navigator.userAgent))) {
 					return parentEl.contains(el);
 				}
 				if ( parentEl.compareDocumentPosition ) {
