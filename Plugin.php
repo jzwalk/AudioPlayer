@@ -5,7 +5,7 @@ if (!defined('__TYPECHO_ROOT_DIR__')) exit;
  * 
  * @package AudioPlayer
  * @author 羽中
- * @version 1.2.0
+ * @version 1.2.1
  * @dependence 13.12.12-*
  * @link http://www.jzwalk.com/archives/net/audio-player-for-typecho
  */
@@ -21,8 +21,8 @@ class AudioPlayer_Plugin implements Typecho_Plugin_Interface
 	 */
 	public static function activate()
 	{
-		Typecho_Plugin::factory('Widget_Abstract_Contents')->contentEx = array('AudioPlayer_Plugin', 'playerparse');
-		Typecho_Plugin::factory('Widget_Abstract_Contents')->excerptEx = array('AudioPlayer_Plugin', 'playerparse');
+		Typecho_Plugin::factory('Widget_Abstract_Contents')->contentEx = array('AudioPlayer_Plugin','playerparse');
+		Typecho_Plugin::factory('Widget_Abstract_Contents')->excerptEx = array('AudioPlayer_Plugin','playerparse');
 		Typecho_Plugin::factory('Widget_Archive')->header = array('AudioPlayer_Plugin','playerjs');
 	}
 	
@@ -34,7 +34,7 @@ class AudioPlayer_Plugin implements Typecho_Plugin_Interface
 	 * @return void
 	 * @throws Typecho_Plugin_Exception
 	 */
-	public static function deactivate(){}
+	public static function deactivate() {}
 	
 	/**
 	 * 获取插件配置面板
@@ -49,8 +49,11 @@ class AudioPlayer_Plugin implements Typecho_Plugin_Interface
 ?>
 	<div style="color:#999;font-size:0.92857em;font-weight:bold;">
 	<?php _e('编辑文章或页面写入如<span style="color:#467B96;">[mp3]</span><span style="color:#E47E00;">文件地址</span><span style="color:#467B96;">[/mp3]</span>发布即可. 多个mp3地址可用<span style="color:#467B96;">,</span>号隔开. <br/>
-		<p>可带参数autostart(自动播放)loop(循环播放)titles(曲名)artists(艺术家名)用<span style="color:#467B96;">|</span>号隔开. <br/>
-		例: %s','<span style="color:#467B96;">[mp3]</span><span style="color:#E47E00;">http://1.mp3</span><span style="color:#467B96;">,</span><span style="color:#E47E00;">http://2.mp3</span><span style="color:#467B96;">|</span><span style="color:#E47E00;">titles=简单爱<span style="color:#467B96;">,</span>The Monster</span><span style="color:#467B96;">|</span><span style="color:#E47E00;">artists=周杰伦<span style="color:#467B96;">,</span>Eminem</span><span style="color:#467B96;">|</span><span style="color:#E47E00;">autostart=yes</span><span style="color:#467B96;">|</span><span style="color:#E47E00;">loop=no</span><span style="color:#467B96;">[/mp3]</span></p>'); ?>
+	<p>可带参数autostart(自动播放)loop(循环播放)titles(曲名)artists(艺术家名)用<span style="color:#467B96;">|</span>号隔开. <br/>
+	例: %s','<span style="color:#467B96;">[mp3]</span><span style="color:#E47E00;">http://jdai.mp3</span><span style="color:#467B96;">,</span><span style="color:#E47E00;">http://m.mp3</span></br>
+	<span style="color:#467B96;">|</span><span style="color:#E47E00;">titles=简单爱<span style="color:#467B96;">,</span>The Monster</span><br/>
+	<span style="color:#467B96;">|</span><span style="color:#E47E00;">artists=周杰伦<span style="color:#467B96;">,</span>Eminem</span><br/>
+	<span style="color:#467B96;">|</span><span style="color:#E47E00;">autostart=yes</span><span style="color:#467B96;">|</span><span style="color:#E47E00;">loop=no</span><span style="color:#467B96;">[/mp3]</span></p>'); ?>
 	</div>
 
 	<link href="<?php $options->pluginUrl('AudioPlayer/assets/audio-player-admin.css');?>" rel="stylesheet" type="text/css" />
@@ -60,7 +63,7 @@ class AudioPlayer_Plugin implements Typecho_Plugin_Interface
 	<script type="text/javascript" src="<?php $options->pluginUrl('AudioPlayer/assets/audio-player-admin.js');?>"></script>
 	<script type="text/javascript" src="<?php $options->pluginUrl('AudioPlayer/assets/audio-player.js');?>"></script>
 	<script type="text/javascript">
-		AudioPlayer.setup("<?php $options->pluginUrl('AudioPlayer/assets/player.swf');?>", <?php echo self::getsets();?>);
+		AudioPlayer.setup("<?php $options->pluginUrl('AudioPlayer/assets/player.swf');?>",<?php echo self::getsets();?>);
 	</script>
 
 	<div id="ap_colorscheme">
@@ -111,7 +114,7 @@ class AudioPlayer_Plugin implements Typecho_Plugin_Interface
 				Audio Player
 			</div>
 			<script type="text/javascript">
-			AudioPlayer.embed("ap_demoplayer", {demomode:"yes"});
+			AudioPlayer.embed("ap_demoplayer",{demomode:"yes"});
 			</script>');
 		$ap_fieldselector->input->setAttribute('id','ap_fieldselector');
 		$ap_fieldselector->input->setAttribute('style','height:23px;');
@@ -141,6 +144,20 @@ class AudioPlayer_Plugin implements Typecho_Plugin_Interface
 	 	array('1'=>_t('即使有也不显示曲名/艺术家名等标签信息')),NULL,_t('禁用曲目信息'));
 		$form->addInput($ap_noinfo);
 
+		$ap_initialvolume = new Typecho_Widget_Helper_Form_Element_Text('ap_initialvolume',
+			NULL,'60',_t('起始音量大小'),_t('播放器启动时的音量起步值，最大100, 默认60'));
+		$ap_initialvolume->input->setAttribute('class','w-10');
+		$ap_initialvolume->addRule('isInteger',_t('请填入一个数字'));
+		$ap_initialvolume->addRule('required',_t('起始音量不能为空'));
+		$form->addInput($ap_initialvolume);
+
+		$ap_buffer = new Typecho_Widget_Helper_Form_Element_Text('ap_buffer',
+			NULL,'5',_t('缓冲等待时间'),_t('单位秒, 播放卡顿可适当提高, 一般宽带5秒足够'));
+		$ap_buffer->input->setAttribute('class','w-10');
+		$ap_buffer->addRule('isInteger',_t('请填入一个数字'));
+		$ap_buffer->addRule('required',_t('缓冲时间不能为空'));
+		$form->addInput($ap_buffer);
+
 		//配色参数隐藏域
 		$filtformat = array(new AudioPlayer_Plugin,'colorformat');
 		$ap_bgcolor = new Typecho_Widget_Helper_Form_Element_Hidden('ap_bgcolor',NULL,'#E5E5E5',NULL);
@@ -167,15 +184,15 @@ class AudioPlayer_Plugin implements Typecho_Plugin_Interface
 		$ap_righticoncolor = new Typecho_Widget_Helper_Form_Element_Hidden('ap_righticoncolor',NULL,'#333333',NULL);
 		$ap_righticoncolor->input->setAttribute('id','ap_righticoncolor');
 		$form->addInput($ap_righticoncolor->addRule($filtformat));
+		$ap_righticonhovercolor = new Typecho_Widget_Helper_Form_Element_Hidden('ap_righticonhovercolor',NULL,'#FFFFFF',NULL);
+		$ap_righticonhovercolor->input->setAttribute('id','ap_righticonhovercolor');
+		$form->addInput($ap_righticonhovercolor->addRule($filtformat));
 		$ap_textcolor = new Typecho_Widget_Helper_Form_Element_Hidden('ap_textcolor',NULL,'#333333',NULL);
 		$ap_textcolor->input->setAttribute('id','ap_textcolor');
 		$form->addInput($ap_textcolor->addRule($filtformat));
 		$ap_trackercolor = new Typecho_Widget_Helper_Form_Element_Hidden('ap_trackercolor',NULL,'#DDDDDD',NULL);
 		$ap_trackercolor->input->setAttribute('id','ap_trackercolor');
 		$form->addInput($ap_trackercolor->addRule($filtformat));
-		$ap_righticonhovercolor = new Typecho_Widget_Helper_Form_Element_Hidden('ap_righticonhovercolor',NULL,'#FFFFFF',NULL);
-		$ap_righticonhovercolor->input->setAttribute('id','ap_righticonhovercolor');
-		$form->addInput($ap_righticonhovercolor->addRule($filtformat));
 		$ap_trackcolor = new Typecho_Widget_Helper_Form_Element_Hidden('ap_trackcolor',NULL,'#FFFFFF',NULL);
 		$ap_trackcolor->input->setAttribute('id','ap_trackcolor');
 		$form->addInput($ap_trackcolor->addRule($filtformat));
@@ -196,7 +213,7 @@ class AudioPlayer_Plugin implements Typecho_Plugin_Interface
 	 * @param Typecho_Widget_Helper_Form $form
 	 * @return void
 	 */
-	public static function personalConfig(Typecho_Widget_Helper_Form $form){}
+	public static function personalConfig(Typecho_Widget_Helper_Form $form) {}
 
 	/**
 	 * 标签链接替换
@@ -206,16 +223,21 @@ class AudioPlayer_Plugin implements Typecho_Plugin_Interface
 	 */
 	public static function playerparse($content,$widget,$lastResult)
 	{
-		$content = empty($lastResult)?$content:$lastResult;
+		$content = empty($lastResult) ? $content : $lastResult;
 		$settings = Helper::options()->plugin('AudioPlayer');
 
 		if ($widget instanceof Widget_Archive) {
+			//兼容markdown
+			if ($widget->isMarkdown) {
+				$text = str_replace(array('[mp3]','[/mp3]'),array('<div>[mp3]','[/mp3]</div>'),$widget->text);
+				$content = MarkdownExtraExtended::defaultTransform($text);
+			}
 			//替换mp3链接
 			if ($settings->ap_behaviour) {
-				$pattern = "/<a ([^=]+=['\"][^\"']*['\"] )*href=['\"](([^\"']+\.mp3))['\"]( [^=]+=['\"][^\"']*['\"])*>([^<]+)<\/a>/is";
-				$content = preg_replace_callback($pattern,array('AudioPlayer_Plugin',"parseCallback"),$content);
+				$pattern = '/<a ([^=]+=[\'"][^"\']*[\'"] )*href=[\'"](([^"\']+\.mp3))[\'"]( [^=]+=[\'"][^"\']*[\'"])*>([^<]+)<\/a>/is';
+				$content = preg_replace_callback($pattern,array('AudioPlayer_Plugin','parseCallback'),$content);
 			}
-			$content = preg_replace_callback("/\[(mp3)](([^]]+))\[\/\\1]/si",array('AudioPlayer_Plugin',"parseCallback"),$content);
+			$content = preg_replace_callback('/\[(mp3)](([^]]+))\[\/\\1]/si',array('AudioPlayer_Plugin','parseCallback'),$content);
 		}
 
 		return $content;
@@ -229,18 +251,18 @@ class AudioPlayer_Plugin implements Typecho_Plugin_Interface
 	 */
 	public static function parseCallback($matches)
 	{
-		$atts = explode("|",$matches[3]);
-		$data[0] = $atts[0];
+		$atts = explode('|',$matches[3]);
+		
+		//分离参数
+		$files = array_shift($atts);
+		$data = array();
 
-		for ($i=1;$i<count($atts);$i++) {
-			$pair = explode("=",$atts[$i]);
+		foreach ($atts as $att) {
+			$pair = explode('=',$att);
 			$data[trim($pair[0])] = trim($pair[1]);
 		}
 
-		//分离参数
-		$url = array_shift($data);
-
-		return self::getPlayer($url,$data);
+		return self::getPlayer($files,$data);
 	}
 
 	/**
@@ -253,18 +275,17 @@ class AudioPlayer_Plugin implements Typecho_Plugin_Interface
 	public static function getPlayer($source,$playerOptions = array())
 	{
 		$settings = Helper::options()->plugin('AudioPlayer');
-		$archive = Typecho_Widget::widget('Widget_Archive');
 
 		//文件地址
-		if (function_exists("html_entity_decode")) {
+		if (function_exists('html_entity_decode')) {
 			$source = html_entity_decode($source);
 		}
 
 		//加密地址
 		if ($settings->ap_encode) {
-			$playerOptions["soundFile"] = self::encodeSource($source);
+			$playerOptions['soundFile'] = self::encodeSource($source);
 		} else {
-			$playerOptions["soundFile"] = $source;
+			$playerOptions['soundFile'] = $source;
 		}
 
 		//生成实例
@@ -287,11 +308,9 @@ class AudioPlayer_Plugin implements Typecho_Plugin_Interface
 		$options = Helper::options();
 		$playerurl = $options->pluginUrl.'/AudioPlayer/assets/';
 		echo '<script type="text/javascript" src="'.$playerurl.'audio-player.js"></script>';
-		echo "\n";
 		echo '<script type="text/javascript">';
-		echo 'AudioPlayer.setup("'.$playerurl.'player.swf", '.self::getsets().');';
+		echo 'AudioPlayer.setup("'.$playerurl.'player.swf",'.self::getsets().');';
 		echo '</script>';
-		echo "\n";
 	}
 
 	/**
@@ -303,57 +322,59 @@ class AudioPlayer_Plugin implements Typecho_Plugin_Interface
 	{
 		//初始参数
 		$options = array(
-			"width"=>"290",
-			"encode"=>false,
-			"animation"=>true,
-			"remaining"=>false,
-			"checkpolicy"=>true,
-			"noinfo"=>false,
-			"initialvolume"=>"60",
-			"buffer"=>"5",
-			"rtl"=>false,
-			"bg"=>"E5E5E5",
-			"text"=>"333333",
-			"leftbg"=>"CCCCCC",
-			"lefticon"=>"333333",
-			"volslider"=>"666666",
-			"voltrack"=>"FFFFFF",
-			"rightbg"=>"B4B4B4",
-			"rightbghover"=>"999999",
-			"righticon"=>"333333",
-			"righticonhover"=>"FFFFFF",
-			"track"=>"FFFFFF",
-			"loader"=>"009900",
-			"border"=>"CCCCCC",
-			"tracker"=>"DDDDDD",
-			"skip"=>"666666",
-			"transparentpagebg"=>true
+			'width'=>'290',
+			'encode'=>false,
+			'animation'=>true,
+			'remaining'=>false,
+			'checkpolicy'=>true,
+			'noinfo'=>false,
+			'initialvolume'=>'60',
+			'buffer'=>'5',
+			'rtl'=>false,
+			'bg'=>'E5E5E5',
+			'text'=>'333333',
+			'leftbg'=>'CCCCCC',
+			'lefticon'=>'333333',
+			'volslider'=>'666666',
+			'voltrack'=>'FFFFFF',
+			'rightbg'=>'B4B4B4',
+			'rightbghover'=>'999999',
+			'righticon'=>'333333',
+			'righticonhover'=>'FFFFFF',
+			'track'=>'FFFFFF',
+			'loader'=>'009900',
+			'border'=>'CCCCCC',
+			'tracker'=>'DDDDDD',
+			'skip'=>'666666',
+			'transparentpagebg'=>true
 		);
 
 		//设置参数
 		if (isset(Helper::options()->plugins['activated']['AudioPlayer'])) {
 			$settings = Helper::options()->plugin('AudioPlayer');
-			$options["width"] = $settings->ap_width;
-			$options["encode"] = ($settings->ap_encode)?true:false;
-			$options["animation"] = ($settings->ap_animation)?false:true;
-			$options["remaining"] = ($settings->ap_remaining)?true:false;
-			$options["checkpolicy"] = ($settings->ap_checkpolicy)?true:false;
-			$options["noinfo"] = ($settings->ap_noinfo)?true:false;
-			$options["bg"] = substr($settings->ap_bgcolor,1);
-			$options["text"] = substr($settings->ap_textcolor,1);
-			$options["leftbg"] = substr($settings->ap_leftbgcolor,1);
-			$options["lefticon"] = substr($settings->ap_lefticoncolor,1);
-			$options["volslider"] = substr($settings->ap_volslidercolor,1);
-			$options["voltrack"] = substr($settings->ap_voltrackcolor,1);
-			$options["rightbg"] = substr($settings->ap_rightbgcolor,1);
-			$options["rightbghover"] = substr($settings->ap_righticonhovercolor,1);
-			$options["righticon"] = substr($settings->ap_righticoncolor,1);
-			$options["righticonhover"] = substr($settings->ap_rightbghovercolor,1);
-			$options["track"] = substr($settings->ap_trackcolor,1);
-			$options["loader"] = substr($settings->ap_loadercolor,1);
-			$options["border"] = substr($settings->ap_bordercolor,1);
-			$options["tracker"] = substr($settings->ap_trackercolor,1);
-			$options["skip"] = substr($settings->ap_skipcolor,1);
+			$options['width'] = $settings->ap_width;
+			$options['encode'] = ($settings->ap_encode) ? true : false;
+			$options['animation'] = ($settings->ap_animation) ? false : true;
+			$options['remaining'] = ($settings->ap_remaining) ? true : false;
+			$options['checkpolicy'] = ($settings->ap_checkpolicy) ? true : false;
+			$options['noinfo'] = ($settings->ap_noinfo) ? true : false;
+			$options['initialvolume'] = ($settings->ap_initialvolume);
+			$options['buffer'] = $settings->ap_buffer;
+			$options['bg'] = substr($settings->ap_bgcolor,1);
+			$options['text'] = substr($settings->ap_textcolor,1);
+			$options['leftbg'] = substr($settings->ap_leftbgcolor,1);
+			$options['lefticon'] = substr($settings->ap_lefticoncolor,1);
+			$options['volslider'] = substr($settings->ap_volslidercolor,1);
+			$options['voltrack'] = substr($settings->ap_voltrackcolor,1);
+			$options['rightbg'] = substr($settings->ap_rightbgcolor,1);
+			$options['rightbghover'] = substr($settings->ap_righticonhovercolor,1);
+			$options['righticon'] = substr($settings->ap_righticoncolor,1);
+			$options['righticonhover'] = substr($settings->ap_rightbghovercolor,1);
+			$options['track'] = substr($settings->ap_trackcolor,1);
+			$options['loader'] = substr($settings->ap_loadercolor,1);
+			$options['border'] = substr($settings->ap_bordercolor,1);
+			$options['tracker'] = substr($settings->ap_trackercolor,1);
+			$options['skip'] = substr($settings->ap_skipcolor,1);
 		}
 
 		return self::php2js($options);
@@ -368,16 +389,16 @@ class AudioPlayer_Plugin implements Typecho_Plugin_Interface
 	private static function php2js($object)
 	{
 		$js_options = '{';
-		$separator = "";
-		$real_separator = ",";
+		$separator = '';
+		$real_separator = ',';
 
 		foreach($object as $key=>$value) {
 			//布尔型格式
-			if (is_bool($value)) $value = $value?"yes":"no";
-			else if (in_array($key,array("soundFile","titles","artists"))) {
-				if (in_array($key,array("titles","artists"))) {
+			if (is_bool($value)) $value = $value ? 'yes' : 'no';
+			else if (in_array($key,array('soundFile','titles','artists'))) {
+				if (in_array($key,array('titles','artists'))) {
 					//标题艺术家信息
-					if (function_exists("html_entity_decode")) {
+					if (function_exists('html_entity_decode')) {
 						$value = html_entity_decode($value);
 					}
 				}
@@ -387,7 +408,7 @@ class AudioPlayer_Plugin implements Typecho_Plugin_Interface
 			$separator = $real_separator;
 		}
 
-		$js_options .= "}";
+		$js_options .= '}';
 
 		return $js_options;
 	}
@@ -401,15 +422,15 @@ class AudioPlayer_Plugin implements Typecho_Plugin_Interface
 	private static function encodeSource($string)
 	{
 		$source = utf8_decode($string);
-		$ntexto = "";
-		$codekey = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-";
+		$ntexto = '';
+		$codekey = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-';
 
 		for ($i=0;$i<strlen($string);$i++) {
-			$ntexto .= substr("0000".base_convert(ord($string{$i}),10,2),-8);
+			$ntexto .= substr('0000'.base_convert(ord($string{$i}),10,2),-8);
 		}
 
-		$ntexto .= substr("00000",0,6-strlen($ntexto)%6);
-		$string = "";
+		$ntexto .= substr('00000',0,6-strlen($ntexto)%6);
+		$string = '';
 
 		for ($i=0;$i<strlen($ntexto)-1;$i=$i+6) {
 			$string .= $codekey{intval(substr($ntexto,$i,6),2)};
@@ -443,7 +464,7 @@ class AudioPlayer_Plugin implements Typecho_Plugin_Interface
 	 */
 	public static function widthformat($width)
 	{
-		return preg_match("/^[0-9]+%?$/",$width);
+		return preg_match('/^[0-9]+%?$/',$width);
 	}
 
 	/**
@@ -455,7 +476,7 @@ class AudioPlayer_Plugin implements Typecho_Plugin_Interface
 	 */
 	public static function colorformat($color)
 	{
-		return preg_match("/^#[0-9A-Fa-f]{6}$/",$color);
+		return preg_match('/^#[0-9A-Fa-f]{6}$/',$color);
 	}
 
 }
