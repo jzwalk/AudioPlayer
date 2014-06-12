@@ -5,7 +5,7 @@ if (!defined('__TYPECHO_ROOT_DIR__')) exit;
  * 
  * @package AudioPlayer
  * @author 羽中
- * @version 1.2.1
+ * @version 1.2.2
  * @dependence 13.12.12-*
  * @link http://www.jzwalk.com/archives/net/audio-player-for-typecho
  */
@@ -145,7 +145,7 @@ class AudioPlayer_Plugin implements Typecho_Plugin_Interface
 		$form->addInput($ap_noinfo);
 
 		$ap_initialvolume = new Typecho_Widget_Helper_Form_Element_Text('ap_initialvolume',
-			NULL,'60',_t('起始音量大小'),_t('播放器启动时的音量起步值，最大100, 默认60'));
+			NULL,'60',_t('起始音量大小'),_t('播放器启动时的音量起步值, 最大100, 默认60'));
 		$ap_initialvolume->input->setAttribute('class','w-10');
 		$ap_initialvolume->addRule('isInteger',_t('请填入一个数字'));
 		$ap_initialvolume->addRule('required',_t('起始音量不能为空'));
@@ -231,6 +231,11 @@ class AudioPlayer_Plugin implements Typecho_Plugin_Interface
 			if ($widget->isMarkdown) {
 				$text = str_replace(array('[mp3]','[/mp3]'),array('<div>[mp3]','[/mp3]</div>'),$widget->text);
 				$content = MarkdownExtraExtended::defaultTransform($text);
+				//兼容手动摘要
+				if ($widget->is('index')||$widget->is('archive')) {
+					$contents = explode('<!--more-->',$text);
+					list($content) = $contents;
+				}
 			}
 			//替换mp3链接
 			if ($settings->ap_behaviour) {
