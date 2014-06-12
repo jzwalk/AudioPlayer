@@ -144,6 +144,10 @@ class AudioPlayer_Plugin implements Typecho_Plugin_Interface
 	 	array('1'=>_t('即使有也不显示曲名/艺术家名等标签信息')),NULL,_t('禁用曲目信息'));
 		$form->addInput($ap_noinfo);
 
+		$ap_fallback = new Typecho_Widget_Helper_Form_Element_Checkbox('ap_fallback',
+	 	array('1'=>_t('若浏览器不支持flash则显示mp3下载链接')),NULL,_t('缺省显示下载'));
+		$form->addInput($ap_fallback);
+
 		$ap_initialvolume = new Typecho_Widget_Helper_Form_Element_Text('ap_initialvolume',
 			NULL,'60',_t('起始音量大小'),_t('播放器启动时的音量起步值, 最大100, 默认60'));
 		$ap_initialvolume->input->setAttribute('class','w-10');
@@ -293,9 +297,12 @@ class AudioPlayer_Plugin implements Typecho_Plugin_Interface
 			$playerOptions['soundFile'] = $source;
 		}
 
+		//缺省提示
+		$fallback = $settings->ap_fallback ? _t('下载音频: ').'<a href="'.$source.'">'.basename($source).'</a>' : _t('播放此段音频需要Adobe Flash Player, 请点击<a href="%s" title="下载Adobe Flash Player">下载最新版本</a>并确认浏览器已开启JavaScipt支持','http://www.adobe.com/shockwave/download/download.cgi?P1_Prod_Version=ShockwaveFlash&amp;promoid=BIOW');
+
 		//生成实例
 		$playerElementID = "audioplayer_".++self::$playerID;
-		$playerCode = '<p class="audioplayer_container"><span style="padding:5px;border:1px solid #dddddd;background:#f8f8f8" id="'.$playerElementID.'">'._t('播放此段音频需要Adobe Flash Player, 请点击<a href="%s" title="下载Adobe Flash Player">下载最新版本</a>并确认浏览器已开启JavaScipt支持','http://www.adobe.com/shockwave/download/download.cgi?P1_Prod_Version=ShockwaveFlash&amp;promoid=BIOW').'</span></p>';
+		$playerCode = '<p class="audioplayer_container"><span style="padding:5px;border:1px solid #dddddd;background:#f8f8f8" id="'.$playerElementID.'">'.$fallback.'</span></p>';
 		$playerCode .= '<script type="text/javascript">';
 		$playerCode .= 'AudioPlayer.embed("'.$playerElementID.'",'.self::php2js($playerOptions).');';
 		$playerCode .= '</script>';
