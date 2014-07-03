@@ -5,7 +5,7 @@ if (!defined('__TYPECHO_ROOT_DIR__')) exit;
  * 
  * @package AudioPlayer
  * @author 羽中
- * @version 1.2.2
+ * @version 1.2.3
  * @dependence 13.12.12-*
  * @link http://www.jzwalk.com/archives/net/audio-player-for-typecho
  */
@@ -21,6 +21,7 @@ class AudioPlayer_Plugin implements Typecho_Plugin_Interface
 	 */
 	public static function activate()
 	{
+		Typecho_Plugin::factory('Widget_Abstract_Contents')->filter = array('AudioPlayer_Plugin','playerfilter');
 		Typecho_Plugin::factory('Widget_Abstract_Contents')->contentEx = array('AudioPlayer_Plugin','playerparse');
 		Typecho_Plugin::factory('Widget_Abstract_Contents')->excerptEx = array('AudioPlayer_Plugin','playerparse');
 		Typecho_Plugin::factory('Widget_Archive')->header = array('AudioPlayer_Plugin','playerjs');
@@ -220,7 +221,35 @@ class AudioPlayer_Plugin implements Typecho_Plugin_Interface
 	public static function personalConfig(Typecho_Widget_Helper_Form $form) {}
 
 	/**
-	 * 标签链接替换
+	 * 头部js方法挂载
+	 * 
+	 * @return void
+	 */
+	public static function playerjs()
+	{
+		$playerurl = Helper::options()->pluginUrl.'/AudioPlayer/assets/';
+		echo '<script type="text/javascript" src="'.$playerurl.'audio-player.js"></script><script type="text/javascript">AudioPlayer.setup("'.$playerurl.'player.swf",'.self::getsets().');</script>';
+	}
+
+	/**
+	 * MD兼容性过滤
+	 * 
+	 * @param array $value
+	 * @return array
+	 */
+	public static function playerfilter($value)
+	{
+		//屏蔽自动链接
+		if ($value['isMarkdown']) {
+			$value['text'] = preg_replace('/(?!<div>)\[(mp3)](.*?)\[\/\\1](?!<\/div>)/is','<div>[mp3]\\2[/mp3]</div>',$value['text']);
+			//兼容JWPlayer
+			$value['text'] = preg_replace('/(?!<div>)<(jw)>(.*?)<\/\\1>(?!<\/div>)/is','<div><jw>\\2</jw></div>',$value['text']);
+		}
+		return $value;
+	}
+
+	/**
+	 * 内容标签替换
 	 * 
 	 * @param string $content
 	 * @return string
@@ -231,22 +260,12 @@ class AudioPlayer_Plugin implements Typecho_Plugin_Interface
 		$settings = Helper::options()->plugin('AudioPlayer');
 
 		if ($widget instanceof Widget_Archive) {
-			//兼容markdown
-			if ($widget->isMarkdown) {
-				$text = str_replace(array('[mp3]','[/mp3]'),array('<div>[mp3]','[/mp3]</div>'),$widget->text);
-				$content = MarkdownExtraExtended::defaultTransform($text);
-				//兼容手动摘要
-				if ($widget->is('index')||$widget->is('archive')) {
-					$contents = explode('<!--more-->',$text);
-					list($content) = $contents;
-				}
-			}
 			//替换mp3链接
 			if ($settings->ap_behaviour) {
 				$pattern = '/<a ([^=]+=[\'"][^"\']*[\'"] )*href=[\'"](([^"\']+\.mp3))[\'"]( [^=]+=[\'"][^"\']*[\'"])*>([^<]+)<\/a>/is';
 				$content = preg_replace_callback($pattern,array('AudioPlayer_Plugin','parseCallback'),$content);
 			}
-			$content = preg_replace_callback('/\[(mp3)](([^]]+))\[\/\\1]/si',array('AudioPlayer_Plugin','parseCallback'),$content);
+			$content = preg_replace_callback('/\[(mp3)](.*?)\[\/\\1]/si',array('AudioPlayer_Plugin','parseCallback'),$content);
 		}
 
 		return $content;
@@ -260,7 +279,7 @@ class AudioPlayer_Plugin implements Typecho_Plugin_Interface
 	 */
 	public static function parseCallback($matches)
 	{
-		$atts = explode('|',$matches[3]);
+		$atts = explode('|',$matches[2]);
 		
 		//分离参数
 		$files = array_shift($atts);
@@ -308,21 +327,6 @@ class AudioPlayer_Plugin implements Typecho_Plugin_Interface
 		$playerCode .= '</script>';
 
 		return $playerCode;
-	}
-
-	/**
-	 * 输出js嵌载方法
-	 * 
-	 * @return void
-	 */
-	public static function playerjs()
-	{
-		$options = Helper::options();
-		$playerurl = $options->pluginUrl.'/AudioPlayer/assets/';
-		echo '<script type="text/javascript" src="'.$playerurl.'audio-player.js"></script>';
-		echo '<script type="text/javascript">';
-		echo 'AudioPlayer.setup("'.$playerurl.'player.swf",'.self::getsets().');';
-		echo '</script>';
 	}
 
 	/**
