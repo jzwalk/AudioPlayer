@@ -5,7 +5,7 @@ if (!defined('__TYPECHO_ROOT_DIR__')) exit;
  * 
  * @package AudioPlayer
  * @author 羽中
- * @version 1.2.4
+ * @version 1.2.5
  * @dependence 14.10.10-*
  * @link http://www.yzmb.me/archives/net/audio-player-for-typecho
  */
@@ -54,6 +54,7 @@ class AudioPlayer_Plugin implements Typecho_Plugin_Interface
 	{
 		Typecho_Plugin::factory('Widget_Abstract_Contents')->contentEx = array('AudioPlayer_Plugin','playerparse');
 		Typecho_Plugin::factory('Widget_Abstract_Contents')->excerptEx = array('AudioPlayer_Plugin','playerparse');
+		Typecho_Plugin::factory('Widget_Abstract_Contents')->excerpt = array('AudioPlayer_Plugin','textparse');
 	}
 
 	/**
@@ -262,25 +263,37 @@ $(function() {
 	{
 		$content = empty($lastResult) ? $content : $lastResult;
 
-		if ($widget instanceof Widget_Archive && false!==stripos($content,'[mp3]')) {
+		if ($widget instanceof Widget_Archive && !$widget->request->feed && false!==stripos($content,'[mp3]')) {
 			$pattern = '/\[(mp3)](.*?)\[\/\\1]/si';
 			$callback = array('AudioPlayer_Plugin','parseCallback');
 
-			if ($widget->request->feed) {
-				//feed显示提示
-				$content = preg_replace($pattern,_t(' [音频片段: 请查看原文播放] '),$content);
-			} else {
-				//替换播放器标签
-				$content = preg_replace_callback($pattern,$callback,$content);
+			//替换播放器标签
+			$content = preg_replace_callback($pattern,$callback,$content);
 
-				//替换mp3链接
-				if (Helper::options()->plugin('AudioPlayer')->ap_behaviour) {
-					$content = preg_replace_callback('/<a ([^=]+=[\'"][^"\']+[\'"] )*href=[\'"]([^\s]+\.mp3)[\'"]( [^=]+=[\'"][^"\']+[\'"])*>.*?<\/a>/si',$callback,$content);
-				}
+			//替换mp3链接
+			if (Helper::options()->plugin('AudioPlayer')->ap_behaviour) {
+				$content = preg_replace_callback('/<a ([^=]+=[\'"][^"\']+[\'"] )*href=[\'"]([^\s]+\.mp3)[\'"]( [^=]+=[\'"][^"\']+[\'"])*>.*?<\/a>/si',$callback,$content);
 			}
 		}
 
 		return $content;
+	}
+
+	/**
+	 * 摘要文本替换
+	 * 
+	 * @param string $text
+	 * @return string
+	 */
+	public static function textparse($text,$widget,$lastResult)
+	{
+		$text = empty($lastResult) ? $text : $lastResult;
+
+		if ($widget instanceof Widget_Archive && false!==stripos($text,'[mp3]')) {
+			$text = preg_replace('/\[(mp3)](.*?)\[\/\\1]/si',_t(' [音频片段: 请查看全文播放] '),$text);
+		}
+
+		return $text;
 	}
 
 	/**
